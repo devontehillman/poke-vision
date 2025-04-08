@@ -15,46 +15,57 @@ from io import BytesIO
 
 # Evan Gronewold, Devonte Hillman, Svens Dauks
 
+target_pokemon = ["Charmander", "Bulbasaur", "Squirtle", "Cyndaquil", "Totodile", "Chikorita"]
+
 class PokemonDataset(Dataset):
     def __init__(self, csv_file, transform=None):
-        self.data = pd.read_csv(csv_file, skiprows=1, names=["id", "image_url", "caption", "name", "hp", "set_name"])
+        self.data = pd.read_csv(csv_file, skiprows=1, names=["id", "image_url", "caption", "name", "hp", "set_name"]) # use pandas to read in the csv, skip 1st row 
+        # since that row is header
+        # Filter only rows where 'name' is in target_pokemon, so pikachu charmander etc
+        self.data = self.data[self.data['name'].isin(target_pokemon)].reset_index(drop=True) # reset the index to avoid duplicate pokemon
         self.transform = transform
         self.labels = sorted(self.data["name"].unique())  # build label list
-        self.label_to_idx = {name: idx for idx, name in enumerate(self.labels)}
+        self.label_to_idx = {name: idx for idx, name in enumerate(self.labels)} # map names to indices here 
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
+        # Get the image from the image url 
         url = self.data.iloc[idx]["image_url"]
         label = self.label_to_idx[self.data.iloc[idx]["name"]]
 
         try:
-            response = requests.get(url, timeout=5)
+            response = requests.get(url, timeout=5) # request the link and set timout so code can run smoother on laptop 
             image = Image.open(BytesIO(response.content)).convert("RGB")
         except Exception as e:
             print(f"Error loading image: {e}")
-            image = Image.new("RGB", (32, 32))  # fallback blank image
+            image = Image.new("RGB", (50, 50))  # fallback blank image
 
         if self.transform:
             image = self.transform(image)
 
         return image, label
 
-
-
-
+# Everything here from lab with small changes to fit pokemon set 
 def main():
     transform = transforms.Compose([
-        transforms.Resize((32, 32)),
+        transforms.Resize((50, 50)),
         transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,))
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)) # changed off grescale to RGB 
     ])
 
-    batch_size = 5
+    batch_size = 6
+
     dataset = PokemonDataset(csv_file='./pokemon-cards.csv', transform=transform)
     
-    train_size = int(0.8 * len(dataset))
+    # balanced_data = pd.concat([
+    # dataset.data[dataset.data["name"] == name].sample(n=100, replace=True) # got too many sample of pikachu and was overfitting 
+    # for name in target_pokemon
+    # ]).reset_index(drop=True)
+    # dataset.data = balanced_data
+
+    train_size = int(0.8 * len(dataset)) # 80% of data used for training
     test_size = len(dataset) - train_size
     train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
     
@@ -87,7 +98,7 @@ def main():
             self.conv1 = nn.Conv2d(3, 6, 5)
             self.pool = nn.MaxPool2d(2, 2)
             self.conv2 = nn.Conv2d(6, 16, 5)
-            self.fc1 = nn.Linear(16 * 5 * 5, 120)
+            self.fc1 = nn.Linear(16 * 9 * 9, 120) # had to manually change this since resizeing the image to 50x50 to see if that got better results
             self.fc2 = nn.Linear(120, 84)
             self.fc3 = nn.Linear(84, num_classes)
 
@@ -106,7 +117,7 @@ def main():
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-    for epoch in range(2): # loop over the dataset multiple times
+    for epoch in range(10): # loop over the dataset multiple times
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
             # get the inputs; data is a list of [inputs, labels]
@@ -138,7 +149,7 @@ def main():
     # Show images
     imshow(torchvision.utils.make_grid(images))
 
-    net = Net()
+    net = Net(num_classes)
     net.load_state_dict(torch.load(PATH))
 
     outputs = net(images)
@@ -159,7 +170,7 @@ def main():
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-            print(f'Accuracy of the network on the 10000 test images: {100 * correct // total} %')
+            print(f'Accuracy of the network on the {length} test images: {100 * correct // total} %')
 
 
     # prepare to count predictions for each class
@@ -187,6 +198,7 @@ def main():
 
     saveLocation = './cifar_net.pth'
     net.load_state_dict(torch.load(saveLocation))
+    print(dataset.data['name'].value_counts())
                         
 if __name__ == '__main__':
     multiprocessing.freeze_support()
