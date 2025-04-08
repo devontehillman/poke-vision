@@ -7,22 +7,62 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 import numpy as np
 import multiprocessing
+from torch.utils.data import Dataset
+from PIL import Image
+import pandas as pd
+import requests
+from io import BytesIO
 
 # Evan Gronewold, Devonte Hillman, Svens Dauks
 
+class PokemonDataset(Dataset):
+    def __init__(self, csv_file, transform=None):
+        self.data = pd.read_csv(csv_file, skiprows=1, names=["id", "image_url", "caption", "name", "hp", "set_name"])
+        self.transform = transform
+        self.labels = sorted(self.data["name"].unique())  # build label list
+        self.label_to_idx = {name: idx for idx, name in enumerate(self.labels)}
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        url = self.data.iloc[idx]["image_url"]
+        label = self.label_to_idx[self.data.iloc[idx]["name"]]
+
+        try:
+            response = requests.get(url, timeout=5)
+            image = Image.open(BytesIO(response.content)).convert("RGB")
+        except Exception as e:
+            print(f"Error loading image: {e}")
+            image = Image.new("RGB", (32, 32))  # fallback blank image
+
+        if self.transform:
+            image = self.transform(image)
+
+        return image, label
+
+
+
+
 def main():
-    transform = transforms.Compose(
-        [transforms.ToTensor(),
-         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-    
+    transform = transforms.Compose([
+        transforms.Resize((32, 32)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))
+    ])
+
     batch_size = 5
+    dataset = PokemonDataset(csv_file='./pokemon-cards.csv', transform=transform)
+    
+    train_size = int(0.8 * len(dataset))
+    test_size = len(dataset) - train_size
+    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
+    
+    trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
+    testloader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
 
-    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
-    testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=2)
-
-    classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+    classes = dataset.labels  # class names = Pokémon names
+    num_classes = len(classes) # number of classes for pokemon names
 
 
     # Helper function to display the image
@@ -39,17 +79,17 @@ def main():
     # Show images with imshow 
     imshow(torchvision.utils.make_grid(images))
     # Print labels
-    print(' '.join(f'{classes[labels[j]]:5s}' for j in range(batch_size)))
+    print(' '.join(f'{classes[labels[j]]:10s}' for j in range(batch_size)))
 
     class Net(nn.Module):
-        def __init__(self):
+        def __init__(self, num_classes):
             super().__init__()
             self.conv1 = nn.Conv2d(3, 6, 5)
             self.pool = nn.MaxPool2d(2, 2)
             self.conv2 = nn.Conv2d(6, 16, 5)
             self.fc1 = nn.Linear(16 * 5 * 5, 120)
             self.fc2 = nn.Linear(120, 84)
-            self.fc3 = nn.Linear(84, 10)
+            self.fc3 = nn.Linear(84, num_classes)
 
         def forward(self, x):
             x = self.pool(F.relu(self.conv1(x)))
@@ -60,7 +100,7 @@ def main():
             x = self.fc3(x)
             return x
         
-    net = Net()
+    net = Net(num_classes)
 
     # loss function and use momentum with stochastic gradient descent 
     criterion = nn.CrossEntropyLoss()
@@ -104,7 +144,7 @@ def main():
     outputs = net(images)
 
     _, predicted = torch.max(outputs, 1)
-    print('Predicted: ', ' '.join(f'{classes[predicted[j]]:5s}' for j in range(4)))
+    print('Predicted: ', ' '.join(f'{classes[predicted[j]]:10s}' for j in range(batch_size)))
 
 
     correct = 0
@@ -150,5 +190,4 @@ def main():
                         
 if __name__ == '__main__':
     multiprocessing.freeze_support()
-    print("Lab One")
     main()
