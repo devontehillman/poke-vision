@@ -34,9 +34,6 @@ Directory Structure:
             Cyndaquil/
             Totodile/
             Chikorita/
-        train/
-        val/
-        test/
 Note:
     Ensure that the raw dataset is properly organized before running the script.
     The script assumes a GPU is available for training; otherwise, it falls back to CPU.

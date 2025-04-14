@@ -7,7 +7,7 @@ Resources Used:
     ChatGPT 
     DEEP SEEK 
     GEEK FOR GEEKS
-    Lecture slide
+    Lecture slides
 Classes:
     PokemonClassifier: Defines a custom neural network model for Pokémon classification 
     based on a pre-trained ResNet-50 architecture.
