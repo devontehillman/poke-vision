@@ -1,5 +1,5 @@
-"""
-Author: Evan Gronewold, Devonte Hillman, Svens Daukss
+'''
+Authors: Evan Gronewold, Devonte Hillman, Svens Daukss
 Overview:
     This script is designed to download images from the internet using the 
     `simple_image_download` library. It provides a function `download_images` 
@@ -16,7 +16,7 @@ Usage:
     The script is pre-configured to download images for specific Pokémon card 
     classes such as "Bulbasaur card", "Squirtle card", etc., with a limit of 
     100 images per class.
-"""
+'''
 
 from simple_image_download import simple_image_download as simp
 

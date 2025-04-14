@@ -1,3 +1,48 @@
+'''
+Authors: Evan Gronewold, Devonte Hillman, Svens Daukss
+Overview:
+    This script implements a Pokémon image classification pipeline using PyTorch. It includes functionality for 
+    data preprocessing, dataset splitting, model training, evaluation, and prediction. The model is based on 
+    a ResNet-50 architecture, fine-tuned for the classification of Pokémon images into predefined classes.
+Modules: #XX Might Delete
+    os: For directory and file operations.
+    shutil: For file and directory manipulation.
+    PIL: For image processing.
+    torchvision: For dataset and model utilities.
+    torch: For deep learning operations.
+    sklearn.metrics: For evaluation metrics like confusion matrix and classification report.
+    numpy: For numerical operations.
+Classes:
+    PokemonClassifier: A custom PyTorch model class that fine-tunes ResNet-50 for Pokémon classification.
+Functions:
+    create_directory_structure(): Creates the directory structure for train, validation, and test datasets.
+    split_dataset(): Splits a raw dataset into train, validation, and test sets with specified ratios.
+    train_model(): Trains the Pokémon classifier model and saves the best-performing model.
+    predict_pokemon(): Predicts the class of a given Pokémon image and returns the predicted class and probabilities.
+    test_model(): Evaluates the trained model on the test dataset and logs detailed results.
+    main(): The main entry point for the script, orchestrating the data preparation, model training, and evaluation.
+Usage:
+    1. Place raw Pokémon images in the `ROOT_DIR/raw` directory, organized into subdirectories by class.
+    2. Run the script to preprocess the data, train the model, and evaluate its performance.
+    3. Use the `predict_pokemon()` function to classify new Pokémon images.
+Directory Structure:
+    ROOT_DIR/
+        raw/
+            Charmander/
+            Bulbasaur/
+            Squirtle/
+            Cyndaquil/
+            Totodile/
+            Chikorita/
+        train/
+        val/
+        test/
+Note:
+    Ensure that the raw dataset is properly organized before running the script.
+    The script assumes a GPU is available for training; otherwise, it falls back to CPU.
+'''
+
+
 import os
 import shutil
 import PIL
@@ -11,7 +56,7 @@ import torch.optim as optim
 from torch.utils.data import random_split, DataLoader
 from torchvision.datasets import ImageFolder
 from sklearn.metrics import confusion_matrix, classification_report
-import numpy as np
+# import numpy as np #XX
 
 # Create this structure before starting
 ROOT_DIR = "pokemon_data2"
@@ -244,7 +289,7 @@ def test_model(model, test_loader, class_names):
     test_acc = 100 * correct / total
     print(f"\nTest Accuracy: {test_acc:.2f}%")
 
-    # Generate and log confusion matrix #xx
+    # Generate and log confusion matrix #xx good for evaluation but should we use this when we turn it in?
     cm = confusion_matrix(all_labels, all_preds)
     print("\nConfusion Matrix:")
     print(cm)

@@ -1,4 +1,37 @@
+
+
 import torch
+"""
+Authors: Devonte Hillman, Evan Gronewold, Svens Daukss
+Overview:
+    This script is designed to use the pre-trained Pokémon classifier model on a test dataset. 
+    The model is based on a ResNet-50 architecture and is fine-tuned to classify images of Pokémon 
+
+    The script performs the following tasks:
+        - Loads the trained model and its weights.
+        - Loads and preprocesses the test dataset.
+        - Evaluates the model on the test dataset.
+        - Generates a classification report and confusion matrix.
+        - Visualizes sample predictions.
+Resources Used:
+    ChatGPT 
+    DEEP SEEK 
+    GEEK FOR GEEKS
+    Lecture slides
+    Cifar lab
+Classes:
+    - PokemonClassifier: Defines the ResNet-50-based Pokémon classifier model with a custom fully connected layer.
+Functions:
+    - main(): The main function that orchestrates the evaluation process, including loading the model, 
+      processing the test dataset, evaluating the model, and visualizing predictions.
+Usage:
+    1. Ensure the test dataset is organized in subdirectories by class and matches the class names defined in `CLASSES`.
+    2. Update the `test_dir` variable to point to the test dataset directory.
+    3. Place the trained model weights file (`final_trained_model.pth`) in the same directory as this script.
+    4. Run the script using Python:
+        $ python testVision.py
+    5. The script will output the classification report, confusion matrix, and display sample predictions.
+"""
 import torchvision
 from torchvision import transforms, datasets
 from torch.utils.data import DataLoader

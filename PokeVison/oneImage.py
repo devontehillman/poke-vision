@@ -1,3 +1,33 @@
+"""
+Authors:  Devonte Hillman, Evan Gronewold, Svens Daukss
+Overview:
+    This is the script to pass in one image and have the model predict which 
+    pokemon it is. 
+Resources Used:
+    ChatGPT 
+    DEEP SEEK 
+    GEEK FOR GEEKS
+    Lecture slide
+Classes:
+    PokemonClassifier: Defines a custom neural network model for Pokémon classification 
+    based on a pre-trained ResNet-50 architecture.
+
+Functions:  
+    predict_pokemon: Takes an image path, a trained model, and a transformation pipeline 
+    to predict the Pokémon in the image. It preprocesses the image, performs inference, 
+    and returns the predicted class along with the confidence score. Also displays the 
+    image with the prediction.
+    
+    main: Loads the trained model, sets up the device for computation, and performs 
+    prediction on a sample image. It serves as the entry point for the script.
+    and outputs the image, the prediction, as well as the confidence.
+Usage:
+    This file is set up to read one image from the 'oneImage' directory which contains
+    images. Each time the file is run it collects one image from the image directory 
+    and outputs the image, the prediction, as long as the confidence,
+"""
+
+
 import torch
 import torchvision
 from torchvision import transforms
