@@ -20,10 +20,10 @@ Resources Used:
     Lecture slides
     Cifar lab
 Classes:
-    - PokemonClassifier: Defines the ResNet-50-based Pokémon classifier model with a custom fully connected layer.
+    PokemonClassifier: Defines the ResNet-50-based Pokémon classifier model with a custom fully connected layer.
 Functions:
-    - main(): The main function that orchestrates the evaluation process, including loading the model, 
-      processing the test dataset, evaluating the model, and visualizing predictions.
+    main(): The main function that orchestrates the evaluation process, including loading the model, 
+    processing the test dataset, evaluating the model, and visualizing predictions.
 Usage:
     1. Ensure the test dataset is organized in subdirectories by class and matches the class names defined in `CLASSES`.
     2. Update the `test_dir` variable to point to the test dataset directory.
