@@ -4,14 +4,11 @@ __pycache__/
 *.pyo
 
 # Virtual environment
-venv/
+.venv/
 env/
 
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints/
-
 # PyTorch model files
-*.pth
+
 *.pt
 
 # Logs and debugging files
@@ -21,6 +18,7 @@ env/
 
 # Dataset and generated files
 pokemon_data2/
+pokemon_data/
 *.csv
 *.tsv
 
@@ -38,3 +36,5 @@ Thumbs.db
 *.swp
 *.swo
 .DS_Store
+tempCodeRunnerFile.py
+loadPokemon.py

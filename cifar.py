@@ -15,14 +15,17 @@ from io import BytesIO
 
 # Evan Gronewold, Devonte Hillman, Svens Dauks
 
-target_pokemon = ["Charmander", "Bulbasaur", "Squirtle", "Cyndaquil", "Totodile", "Chikorita"]
+target_pokemon = ["Charmander", "Bulbasaur", "Squirtle", "Cyndaquil", "Totodile", "Chikorita"] # gen2 starters 
 
 class PokemonDataset(Dataset):
     def __init__(self, csv_file, transform=None):
         self.data = pd.read_csv(csv_file, skiprows=1, names=["id", "image_url", "caption", "name", "hp", "set_name"]) # use pandas to read in the csv, skip 1st row 
         # since that row is header
         # Filter only rows where 'name' is in target_pokemon, so pikachu charmander etc
-        self.data = self.data[self.data['name'].isin(target_pokemon)].reset_index(drop=True) # reset the index to avoid duplicate pokemon
+        self.data = self.data[self.data['name'].isin(target_pokemon)] # reset the index to avoid duplicate pokemon
+        self.data.to_csv('filtered_pokemon.csv', index=False)  # Save the filtered DataFrame to a CSV file
+        print(self.data.head())  # Displays the first 5 rows of the DataFrame
+        exit()  # Stops the program
         self.transform = transform
         self.labels = sorted(self.data["name"].unique())  # build label list
         self.label_to_idx = {name: idx for idx, name in enumerate(self.labels)} # map names to indices here 
@@ -51,6 +54,26 @@ class PokemonDataset(Dataset):
 def main():
     transform = transforms.Compose([
         transforms.Resize((50, 50)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)) # changed off grescale to RGB 
+    ])
+    
+    transformHoriz = transforms.Compose([
+        transforms.Resize((50, 50)),
+        transforms.RandomHorizontalFlip(p=0.5),  # Randomly flip images horizontally
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)) # changed off grescale to RGB 
+    ])
+    
+    transformVert = transforms.Compose([
+        transforms.Resize((50, 50)),
+        transforms.RandomVerticalFlip(p=0.5),  # Randomly flip images horizontally
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)) # changed off grescale to RGB 
+    ])
+    transformFilter = transforms.Compose([
+        transforms.Resize((50, 50)),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),  # Add random color jitter
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)) # changed off grescale to RGB 
     ])
