@@ -19,6 +19,7 @@ Resources Used:
     GEEK FOR GEEKS
     Lecture slides
     Cifar lab
+    https://scikit-learn.org/stable/modules/model_evaluation.html
 Classes:
     PokemonClassifier: Defines the ResNet-50-based Pokémon classifier model with a custom fully connected layer.
 Functions:
@@ -67,12 +68,12 @@ def main():
     # Load the trained model
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #xx
     model = PokemonClassifier(num_classes=len(CLASSES)) 
-    model.load_state_dict(torch.load("final_trained_model.pth", map_location=device)) # post trained model weights and architecture 
+    model.load_state_dict(torch.load("./best_model50.pth", map_location=device)) # post trained model weights and architecture 
     model = model.to(device)
     model.eval() #Evaluation mode modifies the layers to suit evaluating the model such as not dropping neurons like we do when training 
 
     # Load test data (should be in subdirectories by class)
-    test_dir = "pokemon_data2/test"  # Update this path
+    test_dir = "pokemon_data2/raw"  # Update this path
     test_dataset = datasets.ImageFolder(root=test_dir, transform=transform)
     test_loader = DataLoader(test_dataset, batch_size=4, shuffle=False)
 
@@ -95,12 +96,26 @@ def main():
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 
-    # Generate metrics
-    print("Classification Report:")
-    print(classification_report(all_labels, all_preds, target_names=CLASSES))
+    # Generate metrics using SKLearn Classification Report
+    # print("Classification Report:")
+    # print(classification_report(all_labels, all_preds, target_names=CLASSES))
     
-    print("Confusion Matrix:")
-    print(confusion_matrix(all_labels, all_preds))
+    # Calculate accuracy for each class
+    class_correct = [0] * len(CLASSES)
+    class_total = [0] * len(CLASSES)
+
+    for label, pred in zip(all_labels, all_preds):
+        if label == pred:
+            class_correct[label] += 1
+        class_total[label] += 1
+
+    print("Accuracy for each class RESNET18:")
+    for i, class_name in enumerate(CLASSES):
+        accuracy = 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else 0
+        print(f"{class_name}: {accuracy:.2f}%")
+
+    # print("Confusion Matrix:")
+    # print(confusion_matrix(all_labels, all_preds))
 
     # Visualize some predictions
     def imshow(img):
