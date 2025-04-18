@@ -4,7 +4,7 @@ import torch
 """
 Authors: Devonte Hillman, Evan Gronewold, Svens Daukss
 Overview:
-    This script is designed to use the pre-trained Pokémon classifier model on a test dataset. 
+    This script is designed to use the pre-trained model on a test dataset. 
     The model is based on a ResNet-50 architecture and is fine-tuned to classify images of Pokémon 
 
     The script performs the following tasks:
@@ -33,10 +33,10 @@ Usage:
         $ python testVision.py
     5. The script will output the classification report, confusion matrix, and display sample predictions.
 """
+import os
 import torchvision
 from torchvision import transforms, datasets
 from torch.utils.data import DataLoader
-import os
 from sklearn.metrics import classification_report, confusion_matrix
 import matplotlib.pyplot as plt
 import numpy as np
@@ -66,9 +66,9 @@ class PokemonClassifier(torch.nn.Module):
 
 def main():
     # Load the trained model
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #xx
+    device = torch.device("cpu") #xx
     model = PokemonClassifier(num_classes=len(CLASSES)) 
-    model.load_state_dict(torch.load("./best_model50.pth", map_location=device)) # post trained model weights and architecture 
+    model.load_state_dict(torch.load("./best_model.pth", map_location=device)) # post trained model weights and architecture 
     model = model.to(device)
     model.eval() #Evaluation mode modifies the layers to suit evaluating the model such as not dropping neurons like we do when training 
 
@@ -95,10 +95,6 @@ def main():
             
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
-
-    # Generate metrics using SKLearn Classification Report
-    # print("Classification Report:")
-    # print(classification_report(all_labels, all_preds, target_names=CLASSES))
     
     # Calculate accuracy for each class
     class_correct = [0] * len(CLASSES)
@@ -113,9 +109,6 @@ def main():
     for i, class_name in enumerate(CLASSES):
         accuracy = 100 * class_correct[i] / class_total[i] if class_total[i] > 0 else 0
         print(f"{class_name}: {accuracy:.2f}%")
-
-    # print("Confusion Matrix:")
-    # print(confusion_matrix(all_labels, all_preds))
 
     # Visualize some predictions
     def imshow(img):

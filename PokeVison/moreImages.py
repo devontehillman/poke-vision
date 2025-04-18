@@ -1,21 +1,17 @@
 '''
 Authors: Evan Gronewold, Devonte Hillman, Svens Daukss
 Overview:
-    This script is designed to download images from the internet using the 
+    This script is designed to download images from the google using the 
     `simple_image_download` library. It provides a function `download_images` 
     that takes a search query and a limit on the number of images to download. 
-    The script demonstrates downloading 100 images for each specified Pokémon 
-    card class.
 Resources Used:
-    `simple_image_download` library: A Python library for downloading images 
-    from the internet based on a search query.
+    `simple_image_download` https://github.com/RiddlerQ/simple_image_download
 Functions:
     download_images(query, limit=50): Downloads images based on the provided 
     search query and limit.
 Usage:
     The script is pre-configured to download images for specific Pokémon card 
-    classes such as "Bulbasaur card", "Squirtle card", etc., with a limit of 
-    100 images per class.
+    classes such as "Bulbasaur card", "Squirtle card", etc.
 '''
 
 from simple_image_download import simple_image_download as simp

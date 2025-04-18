@@ -11,13 +11,8 @@ Resources Used:
 Classes:
     PokemonClassifier: Defines a custom neural network model for Pokémon classification 
     based on a pre-trained ResNet-50 architecture.
-
 Functions:  
-    predict_pokemon: Takes an image path, a trained model, and a transformation pipeline 
-    to predict the Pokémon in the image. It preprocesses the image, performs inference, 
-    and returns the predicted class along with the confidence score. Also displays the 
-    image with the prediction.
-    
+    predict_pokemon(): Predicts the class of a given Pokémon image.
     main: Loads the trained model, sets up the device for computation, and performs 
     prediction on a sample image. It serves as the entry point for the script.
     and outputs the image, the prediction, as well as the confidence.
@@ -26,8 +21,6 @@ Usage:
     images. Each time the file is run it collects one image from the image directory 
     and outputs the image, the prediction, as long as the confidence,
 """
-
-
 import torch
 import torchvision
 from torchvision import transforms
@@ -87,7 +80,7 @@ def predict_pokemon(image_path, model, transform):
 
 def main():
     # Load the trained model
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu")
     model = PokemonClassifier(num_classes=len(CLASSES))
     model.load_state_dict(torch.load("final_trained_model.pth", map_location=device))
     model = model.to(device)

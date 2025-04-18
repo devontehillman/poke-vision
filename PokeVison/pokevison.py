@@ -1,14 +1,15 @@
 '''
 Authors: Evan Gronewold, Devonte Hillman, Svens Daukss
 Overview:
-    This script implements a Pokémon image classification pipeline using PyTorch. It includes functionality for 
-    data preprocessing, dataset splitting, model training, evaluation, and prediction. The model is based on 
-    a ResNet-50 architecture, fine-tuned for the classification of Pokémon images into predefined classes.
-Modules: #XX Might Delete
+    This program implements a Pokémon image classification using PyTorch. This program pre-process' images , 
+    splits the data, trains, evaluates, and and makes predictions with test set. The model is based on 
+    a ResNet-50 architecture, trained for the classification of Pokémon images into predefined classes. After 
+    the model is trained its then saved to be pulled in other files.
+Modules:
     os: For directory and file operations.
     shutil: For file and directory manipulation.
     PIL: For image processing.
-    torchvision: For dataset and model utilities.
+    torchvision: For dataset and using models architectures.
     torch: For deep learning operations.
     sklearn.metrics: For evaluation metrics like confusion matrix and classification report.
     numpy: For numerical operations.
@@ -23,7 +24,7 @@ Functions:
     main(): The main entry point for the script, orchestrating the data preparation, model training, and evaluation.
 Usage:
     1. Place raw Pokémon images in the `ROOT_DIR/raw` directory, organized into subdirectories by class.
-    2. Run the script to preprocess the data, train the model, and evaluate its performance.
+    2. Run the script to preprocess the the images, train the model, and evaluate its performance.
     3. Use the `predict_pokemon()` function to classify new Pokémon images.
 Directory Structure:
     ROOT_DIR/
@@ -38,21 +39,21 @@ Note:
     Ensure that the raw dataset is properly organized before running the script.
     The script assumes a GPU is available for training; otherwise, it falls back to CPU.
 '''
-
-
 import os
 import shutil
+import math
 import PIL
-import torchvision
 import torch
-from torchvision import transforms
-from torchvision.models import ResNet50_Weights
 import torch.nn as nn
-import torchvision.models as models
 import torch.optim as optim
 from torch.utils.data import random_split, DataLoader
+import torchvision
+import torchvision.models as models
+from torchvision import transforms
+from torchvision.models import ResNet50_Weights
 from torchvision.datasets import ImageFolder
 from sklearn.metrics import confusion_matrix, classification_report
+from PIL import Image
 # import numpy as np #XX
 
 # Create this structure before starting
@@ -68,8 +69,7 @@ def split_dataset(raw_dir, train_transform, val_transform, train_ratio=0.7, val_
     """
     Splits the raw dataset into train, validation, and test sets.
     """
-    import math
-    # Ensure the ratios sum to 1
+    # Ensure the ratios sum to 1 because we were getting small rounding errors
     assert math.isclose(train_ratio + val_ratio + test_ratio, 1.0, rel_tol=1e-9), "Ratios must sum to 1.0"
 
     # Load the raw dataset
@@ -93,7 +93,7 @@ def split_dataset(raw_dir, train_transform, val_transform, train_ratio=0.7, val_
 
     return train_dataset, val_dataset, test_dataset
 
-# For training data
+# Data aug for training data augmenting data
 train_transform = transforms.Compose([
     transforms.Resize((128, 128)),  # Resize all images to 128x128
     transforms.RandomHorizontalFlip(p=0.5),  # Randomly flip images horizontally
@@ -105,13 +105,12 @@ train_transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize to match ResNet's expected input
 ])
 
-# For validation/test data
+#Data aug For valid & test data
 val_transform = transforms.Compose([
     transforms.Resize((128, 128)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
-
 
 class PokemonClassifier(nn.Module):
     def __init__(self, num_classes):
@@ -119,11 +118,11 @@ class PokemonClassifier(nn.Module):
         self.base_model = models.resnet50(weights=ResNet50_Weights.DEFAULT)
         num_features = self.base_model.fc.in_features
         self.base_model.fc = nn.Sequential(
-            nn.Dropout(0.5),  # Add dropout
-            nn.Linear(num_features, num_classes)
+            nn.Dropout(0.5),  # Add dropout to prevent over fitting 
+            nn.Linear(num_features, num_classes) 
         )
         
-        # Freeze initial layers
+        # Freeze initial layers like we talked about in lab for transfer learning 
         for param in self.base_model.parameters():
             param.requires_grad = False
         # Unfreeze last few layers
@@ -132,11 +131,9 @@ class PokemonClassifier(nn.Module):
 
     def forward(self, x):
         return self.base_model(x)
-    
-
 
 def train_model(model, train_loader, val_loader, num_epochs=5):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu")
     model = model.to(device)
     
     criterion = nn.CrossEntropyLoss()
@@ -146,7 +143,6 @@ def train_model(model, train_loader, val_loader, num_epochs=5):
     best_acc = 0.0
     
     for epoch in range(num_epochs):
-        # Training phase
         model.train()
         running_loss = 0.0
         
@@ -170,63 +166,65 @@ def train_model(model, train_loader, val_loader, num_epochs=5):
         correct = 0
         total = 0
         
-        with torch.no_grad():
+        '''
+        We disable gradient computation for the following
+        Inference: When making predictions on new data.
+        Evaluation: When testing the model on validation or test datasets.
+        Feature Extraction: When using a pre-trained model to extract features without training it.***
+        '''
+        with torch.no_grad(): 
+            #Iterating over Dataset
             for images, labels in val_loader:
                 images = images.to(device)
                 labels = labels.to(device)
                 
+                #Making Predictions
                 outputs = model(images)
                 loss = criterion(outputs, labels)
                 val_loss += loss.item() * images.size(0)
-                
-                _, predicted = torch.max(outputs.data, 1)
+            
+                #find the predicted class for each image
+                _, predicted = torch.max(outputs.data, 1)# Predicted tensor contains the indices of the classes with the highest scores
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
 
-        # Print statistics
+        # for print stats
         train_loss = running_loss / len(train_loader.dataset)
         val_loss = val_loss / len(val_loader.dataset)
         val_acc = 100 * correct / total
         
         print(f"Epoch {epoch+1}/{num_epochs}")
-        print(f"Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Val Acc: {val_acc:.2f}%")
+        print(f"Train Loss: {train_loss:.4f} | Validation Loss: {val_loss:.4f} | Validation Accuracy: {val_acc:.2f}%")
         
-        # Save best model
+        # Save model
         if val_acc > best_acc:
             best_acc = val_acc
             torch.save(model.state_dict(), "best_model.pth")
     
-    print("Training Complete!")
+    print("Training done")
     return model
-
-from PIL import Image
-import imghdr #imghdr module to verify the file type
 
 def predict_pokemon(model, image_path, class_names):
     # Check if the file is a valid image
     if not os.path.exists(image_path) or os.path.getsize(image_path) == 0:
         print(f"File does not exist or is empty: {image_path}")
         return None, None
-    if imghdr.what(image_path) is None:
-        print(f"Invalid image file: {image_path}")
-        os.remove(image_path)  # Remove invalid file
-        print(f"Removed invalid image file: {image_path}")
-        return None, None
 
     # Load and preprocess image
     try:
         image = Image.open(image_path)
         if image.mode == "P" or image.mode == "RGBA":  # Handle palette or transparency
-            image = image.convert("RGBA").convert("RGB")
+            image = image.convert("RGBA").convert("RGB") #used to manage different pixel format types 
         else:
-            image = image.convert("RGB")
+            image = image.convert("RGB") #used to manage different pixel format types 
     except (PIL.UnidentifiedImageError, OSError) as e:
         print(f"Error loading image {image_path}: {e}")
-        os.remove(image_path)  # Remove problematic file
+        os.remove(image_path)  #attempt to automate removing problematic files still need work
         print(f"Removed problematic image file: {image_path}")
         return None, None    
     
-    transform = transforms.Compose([
+    #This trans form keeps the data a close to the regular image to test performance
+    transform = transforms.Compose([ 
         transforms.Resize((128, 128)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -234,7 +232,7 @@ def predict_pokemon(model, image_path, class_names):
     image = transform(image).unsqueeze(0)
     
     # Make prediction
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #xx
+    device = torch.device("cpu") #set the device for computations can switch if you want to run on GPU
     model = model.to(device)
     image = image.to(device)
     
@@ -247,9 +245,9 @@ def predict_pokemon(model, image_path, class_names):
 
 def test_model(model, test_loader, class_names):
     """
-    Evaluate the model on the test dataset and log detailed results.
+    Evaluate the model on the test dataset and print out detailed results.
     """
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu") #xx
+    device = torch.device("cpu") 
     model = model.to(device)
     model.eval()
 
@@ -258,7 +256,8 @@ def test_model(model, test_loader, class_names):
     correct = 0
     total = 0
 
-    print("\n--- Testing Phase ---")
+    print("\nTesting ---")
+    #disable Gradient Computation during evaluation because its unnecessary
     with torch.no_grad():
         for images, labels in test_loader:
             images = images.to(device)
@@ -280,21 +279,14 @@ def test_model(model, test_loader, class_names):
                 true_label = class_names[labels[i].item()]
                 predicted_label = class_names[predicted[i].item()]
                 probabilities = torch.nn.functional.softmax(outputs[i], dim=0).cpu().numpy()
-                print(f"Image {i + 1}: True: {true_label}, Predicted: {predicted_label}, Probabilities: {probabilities}")
+                print(f"Image {i + 1}: True: {true_label}, Predicted: {predicted_label}")
+                print(f"    Probability:")
+                for class_name, probability in zip(class_names, probabilities):
+                    print(f"    {class_name} %{100 * probability:.2f}")
 
     # Calculate overall accuracy
     test_acc = 100 * correct / total
     print(f"\nTest Accuracy: {test_acc:.2f}%")
-
-    # Generate and log confusion matrix #xx good for evaluation but should we use this when we turn it in?
-    cm = confusion_matrix(all_labels, all_preds)
-    print("\nConfusion Matrix:")
-    print(cm)
-
-    # Generate and log classification report
-    report = classification_report(all_labels, all_preds, target_names=class_names)
-    print("\nClassification Report:")
-    print(report)
 
 def main():
     # 1. Prepare data
